@@ -10,14 +10,13 @@ runtime: shiny
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Invasive species are major drivers of biodiversity loss with an exponential growing rate yearly (IPBES 2019; UN World Ocean Assessment II, 2021). Predictive tools for assessing the distribution of non-indigenous species are key to preemptively identifying potential negative impacts on native species and ecosystems, which can be controlled with early detection and rapid mitigation responses (UN World Ocean Assessment II, 2021). The development of Species Distribution Models (SDM) can provide the necessary assessment tools by making use of open-source biogeographic and environmental data.
+Invasive species are major drivers of biodiversity loss with an exponential growing rate yearly (IPBES 2019; UN World Ocean Assessment II, 2021). Predictive tools for assessing the distribution of non-indigenous species are key to preemptively identifying potential negative impacts on native species and ecosystems, which can be controlled with early detection and rapid mitigation responses (UN World Ocean Assessment II, 2021). The development of Species Distribution Models (SDM) can provide the necessary assessment tools by making use of open-source bio geographic and environmental data.
 
 > In this project we explore the usage of BCubes for species dristibution modeling.
 
 ## Methodology
 ### Preparing the BCubes
-We created a custom function to transform gbif occurence data into a Bcube in R. The function gets the key from a species name 
-
+We created a custom function to transform Gbif occurrence data into a Bcube in R. The function gets the key from a species name
 ### Preparing the environmental data
 ### Preparing the STAC Catalogue
 ### Preparing the Models
@@ -33,24 +32,47 @@ source("src/gbif2bcube.R")
 ui <- fluidPage(
   textInput(inputId = "species_name", label = "Scientific name", 
             value = "Rugulopteryx okamurae"),
+  selectInput(inputId = "grid_option", label = "Select a spatial reference grid",
+              choices = c("MGRS", "0.05")),
+  selectInput(inputId = "time_option", label = "Select a temporal frequency",
+              choices = c("monthly", "yearly", "decadal")),
   actionButton("go", "Get my cube!"), 
   DTOutput("bcubed_table") %>% withSpinner(type = 2, color = "#0000FF",
-                                           color.background = "#FFFFFF")
+                                           color.background = "#FFFFFF"),
+  downloadButton("download_table", label = "Download data"),
 )
 server <- function(input, output) {
   bcube <- eventReactive(input$go, {
     req(input$species_name)
-    species_data <- getBCube(input$species_name)
+    req(input$grid_option)
+    req(input$time_option)
+    
+    species_data <- getBCube(name = input$species_name, 
+                             limit = 100000,
+                             grid = input$grid_option,
+                             freq = input$time_option)
     species_data
   })
   output$bcubed_table <- DT::renderDT({
     bcube()
   })
+  output$download_table <- downloadHandler(
+    filename = function(){
+      paste("Table", "_", 
+            substr(Sys.time(), 1, 10), "_", 
+            substr(Sys.time(), 12,13), "h", 
+            substr(Sys.time(), 15, 16), ".csv", sep = "")},
+    content = function(file){
+      write.csv(bcube(), file, row.names = FALSE)
+    }
+  )
+
 }
 shinyApp(ui, server)
 ```
 
-# Models
+# Study cases
+
 
 
 
