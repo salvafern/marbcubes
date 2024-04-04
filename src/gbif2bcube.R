@@ -83,7 +83,7 @@ getBCube <- function(name, limit = 100000, grid = "MGRS", freq = "monthly"){
   }
   
   enh_filtered_data <- enh_filtered_data %>%
-    select(speciesKey, time, cellCode, coordinateUncertaintyInMeters )
+    select(speciesKey, species, time, cellCode, coordinateUncertaintyInMeters )
   
   #get counts and minimum uncertainty
   test <- enh_filtered_data %>% count(cellCode, time, speciesKey)
