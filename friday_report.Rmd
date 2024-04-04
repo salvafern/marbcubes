@@ -30,17 +30,22 @@ source("src/gbif2bcube.R")
 ```
 ```{r shiny_get_bcubed, echo=FALSE}
 ui <- fluidPage(
-  textInput(inputId = "species_name", label = "Scientific name", 
+  titlePanel("Shiny app to get your BCude"),
+  sidebarLayout(
+    sidebarPanel(
+      textInput(inputId = "species_name", label = "Scientific name", 
             value = "Rugulopteryx okamurae"),
-  selectInput(inputId = "grid_option", label = "Select a spatial reference grid",
-              choices = c("MGRS", "0.05")),
-  selectInput(inputId = "time_option", label = "Select a temporal frequency",
+      selectInput(inputId = "grid_option", label = "Select a spatial reference grid",
+              choices = c("MGRS", "0.05 Degree grid")),
+      selectInput(inputId = "time_option", label = "Select a temporal frequency",
               choices = c("monthly", "yearly", "decadal")),
-  actionButton("go", "Get my cube!"), 
-  DTOutput("bcubed_table") %>% withSpinner(type = 2, color = "#0000FF",
+      actionButton("go", "Get my cube!")
+      ),
+    mainPanel(
+      DTOutput("bcubed_table") %>% withSpinner(type = 2, color = "#0000FF",
                                            color.background = "#FFFFFF"),
-  downloadButton("download_table", label = "Download data"),
-)
+      downloadButton("download_table", label = "Download data"))
+    )
 server <- function(input, output) {
   bcube <- eventReactive(input$go, {
     req(input$species_name)
