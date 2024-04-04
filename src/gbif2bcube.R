@@ -3,14 +3,19 @@ library(dplyr)
 library(stringr)
 library(purrr)
 library(tidyr)
+library(mgrs)
 
-getBCube <- function(name, limit = 100000){
+getBCube <- function(name, limit = 100000, grid = "MGRS"){
   #get taxonKey
   namematch <- name_backbone(name)
   if (is.null(namematch$usageKey) ||  namematch$matchType != "EXACT"){
     stop("Invalid name")
   } else {
     id <- namematch$usageKey
+  }
+  #check grid parameter
+  if(!grid %in% c("MGRS", "0.05")){
+    stop("Invalid grid")
   }
   
   #get all records 
@@ -36,25 +41,27 @@ getBCube <- function(name, limit = 100000){
   
   # Transform to cube -------------------------------------------------------
   
-  #get centroid of the grid cell of a quarter degree grid
-  getCentroidGrid <- function(coord){
-    if(coord < 0){
-      round((coord)*4)/4 - 0.025
-    } else {
-      round((coord)*4)/4 + 0.025
-    }
-  }
-  
+
   if(!"coordinateUncertaintyInMeters" %in% names(data)){
     filtered_data <- filtered_data %>% mutate(coordinateUncertaintyInMeters= 1000)
   }
   
   enh_filtered_data <- filtered_data %>%
     mutate(coordinateUncertaintyInMeters = replace_na(filtered_data$coordinateUncertaintyInMeters, 1000)) %>%
-    mutate(yearMonth = paste0(year, "-", month)) %>%
-    mutate(gridCornerLat = map(filtered_data$decimalLatitude, ~getCentroidGrid(.x))) %>%
-    mutate(gridCornerLong = map(filtered_data$decimalLongitude, ~getCentroidGrid(.x))) %>%
-    mutate(cellCode = paste0(gridCornerLat, "_", gridCornerLong)) %>%
+    mutate(yearMonth = paste0(year, "-", month))
+  
+  #give cell code according to chosen grid system
+  if(grid == "MGRS"){
+    enh_filtered_data <- enh_filtered_data %>%
+      mutate(cellCode =  unlist(map2(enh_filtered_data$decimalLatitude, enh_filtered_data$decimalLongitude, ~latlng_to_mgrs(.x, .y))))
+  } else if (grid == "0.05"){
+    enh_filtered_data <- enh_filtered_data %>%
+      mutate(gridCornerLat = map(enh_filtered_data$decimalLatitude, ~getCentroidGrid(.x))) %>%
+      mutate(gridCornerLong = map(enh_filtered_data$decimalLongitude, ~getCentroidGrid(.x))) %>%
+      mutate(cellCode = paste0(gridCornerLat, "_", gridCornerLong))
+  }
+  
+  enh_filtered_data <- enh_filtered_data %>%
     select(speciesKey, yearMonth, cellCode, coordinateUncertaintyInMeters )
   
   #get counts and minimum uncertainty
@@ -64,4 +71,13 @@ getBCube <- function(name, limit = 100000){
     select(-c(Group.1, Group.2, Group.3))
   
   return(cube)
+}
+
+#get centroid of the grid cell of a quarter degree grid
+getCentroidGrid <- function(coord){
+  if(coord < 0){
+    round((coord)*4)/4 - 0.025
+  } else {
+    round((coord)*4)/4 + 0.025
+  }
 }
