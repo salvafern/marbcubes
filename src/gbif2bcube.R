@@ -5,7 +5,7 @@ library(purrr)
 library(tidyr)
 library(mgrs)
 
-getBCube <- function(name, limit = 100000, grid = "MGRS"){
+getBCube <- function(name, limit = 100000, grid = "MGRS", freq = "monthly"){
   #get taxonKey
   namematch <- name_backbone(name)
   if (is.null(namematch$usageKey) ||  namematch$matchType != "EXACT"){
@@ -16,6 +16,10 @@ getBCube <- function(name, limit = 100000, grid = "MGRS"){
   #check grid parameter
   if(!grid %in% c("MGRS", "0.05")){
     stop("Invalid grid")
+  }
+  #check frequency parameter
+  if(!freq %in% c("monthly", "yearly", "decadal")){
+    stop("Invalid frequency")
   }
   
   #get all records 
@@ -30,8 +34,15 @@ getBCube <- function(name, limit = 100000, grid = "MGRS"){
            !grepl('ZERO_COORDINATE', data$issues),
            !grepl('COORDINATE_OUT_OF_RANGE', data$issues),
            !grepl('COORDINATE_INVALID', data$issues),
-           !grepl('COUNTRY_COORDINATE_MISMATCH', data$issues),
-           !is.na(month))
+           !grepl('COUNTRY_COORDINATE_MISMATCH', data$issues))
+  
+  if(freq == "monthly"){
+    filtered_data <- filtered_data %>%
+      filter(!is.na(month))
+  } else {
+    filtered_data <- filtered_data %>%
+      filter(!is.na(year))
+  }       
   
   if("identificationVerificationStatus" %in% names(data)){
     #filter
@@ -44,11 +55,21 @@ getBCube <- function(name, limit = 100000, grid = "MGRS"){
 
   if(!"coordinateUncertaintyInMeters" %in% names(data)){
     filtered_data <- filtered_data %>% mutate(coordinateUncertaintyInMeters= 1000)
+  } else {
+    enh_filtered_data <- filtered_data %>%
+      mutate(coordinateUncertaintyInMeters = replace_na(filtered_data$coordinateUncertaintyInMeters, 1000))
   }
-  
-  enh_filtered_data <- filtered_data %>%
-    mutate(coordinateUncertaintyInMeters = replace_na(filtered_data$coordinateUncertaintyInMeters, 1000)) %>%
-    mutate(yearMonth = paste0(year, "-", month))
+
+  if(freq == "monthly"){
+    enh_filtered_data <- enh_filtered_data %>%
+      mutate(time = paste0(year, "-", month))
+  } else if (freq == "yearly") {
+    enh_filtered_data <- enh_filtered_data %>%
+      mutate(time = year)
+  } else if (freq == "decadal"){
+    enh_filtered_data <- enh_filtered_data %>%
+      mutate(time = paste0(substring(year, 1, 3), 0))
+  }
   
   #give cell code according to chosen grid system
   if(grid == "MGRS"){
@@ -62,12 +83,12 @@ getBCube <- function(name, limit = 100000, grid = "MGRS"){
   }
   
   enh_filtered_data <- enh_filtered_data %>%
-    select(speciesKey, yearMonth, cellCode, coordinateUncertaintyInMeters )
+    select(speciesKey, time, cellCode, coordinateUncertaintyInMeters )
   
   #get counts and minimum uncertainty
-  test <- enh_filtered_data %>% count(cellCode, yearMonth, speciesKey)
-  test2 <- aggregate(enh_filtered_data, list(enh_filtered_data$cellCode, enh_filtered_data$yearMonth, enh_filtered_data$speciesKey), min) 
-  cube <- test2 %>% left_join(test, by = c("cellCode", "yearMonth", "speciesKey")) %>%
+  test <- enh_filtered_data %>% count(cellCode, time, speciesKey)
+  test2 <- aggregate(enh_filtered_data, list(enh_filtered_data$cellCode, enh_filtered_data$time, enh_filtered_data$speciesKey), min) 
+  cube <- test2 %>% left_join(test, by = c("cellCode", "time", "speciesKey")) %>%
     select(-c(Group.1, Group.2, Group.3))
   
   return(cube)
