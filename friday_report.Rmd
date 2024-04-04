@@ -1,0 +1,58 @@
+---
+title: "Tackling Ocean Biodiversity Crisis with Marine Data B-Cubes"
+author: "Project 5 team"
+date: "04/04/2024"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Invasive species are major drivers of biodiversity loss with an exponential growing rate yearly (IPBES 2019; UN World Ocean Assessment II, 2021). Predictive tools for assessing the distribution of non-indigenous species are key to preemptively identifying potential negative impacts on native species and ecosystems, which can be controlled with early detection and rapid mitigation responses (UN World Ocean Assessment II, 2021). The development of Species Distribution Models (SDM) can provide the necessary assessment tools by making use of open-source biogeographic and environmental data.
+
+> In this project we explore the usage of BCubes for species dristibution modeling.
+
+## Methodology
+### Preparing the BCubes
+We created a custom function to transform gbif occurence data into a Bcube in R. The function gets the key from a species name 
+
+### Preparing the environmental data
+### Preparing the STAC Catalogue
+### Preparing the Models
+
+
+``` {r load_libraries_source_functions, include = FALSE}
+library(shiny)
+library(DT)
+library(shinycssloaders)
+source("src/gbif2bcube.R")
+```
+```{r shiny_get_bcubed, echo=FALSE}
+ui <- fluidPage(
+  textInput(inputId = "species_name", label = "Scientific name", 
+            value = "Rugulopteryx okamurae"),
+  actionButton("go", "Get my cube!"), 
+  DTOutput("bcubed_table") %>% withSpinner(type = 2, color = "#0000FF",
+                                           color.background = "#FFFFFF")
+)
+server <- function(input, output) {
+  bcube <- eventReactive(input$go, {
+    req(input$species_name)
+    species_data <- getBCube(input$species_name)
+    species_data
+  })
+  output$bcubed_table <- DT::renderDT({
+    bcube()
+  })
+}
+shinyApp(ui, server)
+```
+
+# Models
+
+
+
+
+
