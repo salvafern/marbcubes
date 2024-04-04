@@ -30,7 +30,7 @@ source("src/gbif2bcube.R")
 ```
 ```{r shiny_get_bcubed, echo=FALSE}
 ui <- fluidPage(
-  titlePanel("Shiny app to get your BCude"),
+  titlePanel("Shiny app to get your BCube"),
   sidebarLayout(
     sidebarPanel(
       textInput(inputId = "species_name", label = "Scientific name", 
@@ -46,16 +46,24 @@ ui <- fluidPage(
                                            color.background = "#FFFFFF"),
       downloadButton("download_table", label = "Download data"))
     )
+)
 server <- function(input, output) {
   bcube <- eventReactive(input$go, {
     req(input$species_name)
     req(input$grid_option)
     req(input$time_option)
     
-    species_data <- getBCube(name = input$species_name, 
+    if (input$grid_option == "0.05 Degree grid") {
+      species_data <- getBCube(name = input$species_name,
+                               limit = 100000,
+                               grid = "0.05",
+                               freq = input$time_option)
+    } else {
+      species_data <- getBCube(name = input$species_name, 
                              limit = 100000,
-                             grid = input$grid_option,
+                             grid = "MGRS",
                              freq = input$time_option)
+    }
     species_data
   })
   output$bcubed_table <- DT::renderDT({
