@@ -5,7 +5,7 @@ library(purrr)
 library(tidyr)
 library(mgrs)
 
-getBCube <- function(name, limit = 100000, grid = "MGRS", freq = "monthly"){
+getBCube <- function(name, limit = 100000, grid = "MGRS", freq = "monthly", maxmincoorduncertainty = NA){
   #get taxonKey
   namematch <- name_backbone(name)
   if (is.null(namematch$usageKey) ||  namematch$matchType != "EXACT"){
@@ -20,6 +20,10 @@ getBCube <- function(name, limit = 100000, grid = "MGRS", freq = "monthly"){
   #check frequency parameter
   if(!freq %in% c("monthly", "yearly", "decadal")){
     stop("Invalid frequency")
+  }
+  #check max min coord uncertainty
+  if(!is.na(maxmincoorduncertainty)&!is.numeric(maxmincoorduncertainty)){
+    stop("Non-numeric value for maximum minimum coordinate uncertainty")
   }
   
   #get all records 
@@ -91,6 +95,11 @@ getBCube <- function(name, limit = 100000, grid = "MGRS", freq = "monthly"){
   cube <- test2 %>% left_join(test, by = c("cellCode", "time", "speciesKey")) %>%
     select(-c(Group.1, Group.2, Group.3)) %>%
     rename(minCoordinateUncertaintyInMeters = coordinateUncertaintyInMeters)
+  
+  #remove rows where the mininum coordinate uncertainty surpasses the user specified maximum
+  if(!is.na(maxmincoorduncertainty)){
+    cube <- cube %>% filter(minCoordinateUncertaintyInMeters <= maxmincoorduncertainty)
+  }
   
   return(cube)
 }
