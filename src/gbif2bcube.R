@@ -89,7 +89,8 @@ getBCube <- function(name, limit = 100000, grid = "MGRS", freq = "monthly"){
   test <- enh_filtered_data %>% count(cellCode, time, speciesKey)
   test2 <- aggregate(enh_filtered_data, list(enh_filtered_data$cellCode, enh_filtered_data$time, enh_filtered_data$speciesKey), min) 
   cube <- test2 %>% left_join(test, by = c("cellCode", "time", "speciesKey")) %>%
-    select(-c(Group.1, Group.2, Group.3))
+    select(-c(Group.1, Group.2, Group.3)) %>%
+    rename(minCoordinateUncertaintyInMeters = coordinateUncertaintyInMeters)
   
   return(cube)
 }
