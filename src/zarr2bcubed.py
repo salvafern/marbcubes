@@ -41,3 +41,11 @@ long_df = xr.DataArray(
     coords={"time": time, "latitude": lat, "longitude": lon}
 ).to_dataframe(name="chl_mean").reset_index()
 
+# Add cellCode column
+long_df['cellCode'] = long_df['longitude'].astype(str) + '_' + long_df['latitude'].astype(str)
+
+# Inspect
+print(long_df)
+
+# Export b-cube to CSV
+long_df.to_csv("./data/derived_data/bcube.csv", index=False)
