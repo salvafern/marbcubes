@@ -14,12 +14,17 @@ getBCube <- function(id, limit = 100000){
     filter(occurrenceStatus == "PRESENT",
            !is.na(speciesKey),
            !is.na(decimalLatitude) & !is.na(decimalLongitude),
-           is.na(identificationVerificationStatus) | !str_detect(identificationVerificationStatus, "unverified|unvalidated|not able to validate|control could not be conclusive due to insufficient knowledge|unconfirmed|unconfirmed - not reviewed|validation requested"),
            !grepl('ZERO_COORDINATE', data$issues),
            !grepl('COORDINATE_OUT_OF_RANGE', data$issues),
            !grepl('COORDINATE_INVALID', data$issues),
            !grepl('COUNTRY_COORDINATE_MISMATCH', data$issues),
            !is.na(month))
+  
+  if("identificationVerificationStatus" %in% names(data)){
+    #filter
+    filtered_data <- filtered_data %>%
+      filter(is.na(identificationVerificationStatus) | !str_detect(identificationVerificationStatus, "unverified|unvalidated|not able to validate|control could not be conclusive due to insufficient knowledge|unconfirmed|unconfirmed - not reviewed|validation requested"))
+  }
   
   # Transform to cube -------------------------------------------------------
   
@@ -30,6 +35,10 @@ getBCube <- function(id, limit = 100000){
     } else {
       round((coord)*4)/4 + 0.025
     }
+  }
+  
+  if(!"coordinateUncertaintyInMeters" %in% names(data)){
+    filtered_data <- filtered_data %>% mutate(coordinateUncertaintyInMeters= 1000)
   }
   
   enh_filtered_data <- filtered_data %>%
