@@ -4,7 +4,15 @@ library(stringr)
 library(purrr)
 library(tidyr)
 
-getBCube <- function(id, limit = 100000){
+getBCube <- function(name, limit = 100000){
+  #get taxonKey
+  namematch <- name_backbone(name)
+  if (is.null(namematch$usageKey) ||  namematch$matchType != "EXACT"){
+    stop("Invalid name")
+  } else {
+    id <- namematch$usageKey
+  }
+  
   #get all records 
   myData<-occ_data(taxonKey=id, limit = limit)
   data <- myData$data
