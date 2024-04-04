@@ -2,6 +2,7 @@ library(rgbif)
 library(dplyr)
 library(stringr)
 library(purrr)
+library(tidyr)
 
 getBCube <- function(id, limit = 100000){
   #get all records 
@@ -11,6 +12,7 @@ getBCube <- function(id, limit = 100000){
   #filter
   filtered_data <- data %>%
     filter(occurrenceStatus == "PRESENT",
+           !is.na(speciesKey),
            !is.na(decimalLatitude) & !is.na(decimalLongitude),
            is.na(identificationVerificationStatus) | !str_detect(identificationVerificationStatus, "unverified|unvalidated|not able to validate|control could not be conclusive due to insufficient knowledge|unconfirmed|unconfirmed - not reviewed|validation requested"),
            !grepl('ZERO_COORDINATE', data$issues),
@@ -39,10 +41,10 @@ getBCube <- function(id, limit = 100000){
     select(speciesKey, yearMonth, cellCode, coordinateUncertaintyInMeters )
   
   #get counts and minimum uncertainty
-  test <- enh_filtered_data %>% count(cellCode, yearMonth)
-  test2 <- aggregate(enh_filtered_data, list(enh_filtered_data$cellCode, enh_filtered_data$yearMonth), min) 
-  cube <- test2 %>% left_join(test, by = c("cellCode", "yearMonth")) %>%
-    select(-c(Group.1, Group.2))
+  test <- enh_filtered_data %>% count(cellCode, yearMonth, speciesKey)
+  test2 <- aggregate(enh_filtered_data, list(enh_filtered_data$cellCode, enh_filtered_data$yearMonth, enh_filtered_data$speciesKey), min) 
+  cube <- test2 %>% left_join(test, by = c("cellCode", "yearMonth", "speciesKey")) %>%
+    select(-c(Group.1, Group.2, Group.3))
   
   return(cube)
 }
