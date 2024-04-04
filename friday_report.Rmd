@@ -39,12 +39,14 @@ ui <- fluidPage(
               choices = c("MGRS", "0.05 Degree grid")),
       selectInput(inputId = "time_option", label = "Select a temporal frequency",
               choices = c("monthly", "yearly", "decadal")),
-      actionButton("go", "Get my cube!")
+      numericInput(inputId = "max_min", label = "Maximum mininum coordinate uncertainty", value = NA),
+      actionButton("go", "Get my cube!"),
+      downloadButton("download_table", label = "Download data")
       ),
     mainPanel(
       DTOutput("bcubed_table") %>% withSpinner(type = 2, color = "#0000FF",
-                                           color.background = "#FFFFFF"),
-      downloadButton("download_table", label = "Download data"))
+                                           color.background = "#FFFFFF")
+      )
     )
 )
 server <- function(input, output) {
@@ -57,12 +59,14 @@ server <- function(input, output) {
       species_data <- getBCube(name = input$species_name,
                                limit = 100000,
                                grid = "0.05",
-                               freq = input$time_option)
+                               freq = input$time_option, 
+                               maxmincoorduncertainty = input$max_min)
     } else {
       species_data <- getBCube(name = input$species_name, 
                              limit = 100000,
                              grid = "MGRS",
-                             freq = input$time_option)
+                             freq = input$time_option, 
+                            maxmincoorduncertainty = input$max_min)
     }
     species_data
   })
@@ -81,7 +85,7 @@ server <- function(input, output) {
   )
 
 }
-shinyApp(ui, server)
+shinyApp(ui, server, options = list(height = 500))
 ```
 
 # Study cases
