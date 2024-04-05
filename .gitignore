@@ -6,3 +6,4 @@
 *.csv
 *.tif
 *.rds
+*.parquet
