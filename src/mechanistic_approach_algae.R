@@ -51,3 +51,7 @@ for(f in files) {
   # Display message
   cat("New CSV file created:", output_csv)
 }
+
+## add species occurrences to cube
+cube <- read.csv("C:/Users/ward.standaert/Desktop/b-cubed/new_algae_bo_baseline_bcubed.csv")
+occ_df <- read.csv("C:/Users/ward.standaert/Desktop/b-cubed/bcube_roka.csv")

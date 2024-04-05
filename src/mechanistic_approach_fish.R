@@ -51,3 +51,23 @@ for(f in files) {
   cat("New CSV file created:", output_csv)
 }
 
+
+## add species occurrences to cube
+cube <- read.csv("C:/Users/ward.standaert/Desktop/b-cubed/new_fish_bo_baseline_bcubed.csv")
+occ_df <- read.csv("C:/Users/ward.standaert/Desktop/b-cubed/bcube_fcomm.csv")
+
+nrow(occ_df)
+occ_df2 <- occ_df %>%
+  mutate(longitude = as.numeric(map_chr(str_split(cellCode, "_"),2)),
+         latitude = as.numeric(map_chr(str_split(cellCode, "_"),1)),
+         lon_char = as.character(round(longitude,2)),
+         lat_char = as.character(round(latitude,2)),
+         pres_abs = 1) %>%
+  filter(longitude >= min(cube$longitude), longitude <= max(cube$longitude),
+         latitude >= min(cube$latitude), latitude <= max(cube$latitude))
+nrow(occ_df2)
+
+glimpse(occ_df2)
+
+cube$presabs <- 0
+cube[as.numeric(na.omit(match(occ_df2$cellCode, cube$cellCode))),]$presabs <- 1
